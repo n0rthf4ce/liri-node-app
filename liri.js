@@ -4,12 +4,16 @@ var spotify = new Spotify(keys.spotify), client = new Twitter(keys.twitter), omd
     apiKey: "trilogy",
     baseUrl: 'https://omdbapi.com/'
 });
-var command = process.argv[2], songName = "The Sign", movieName = "Mr. Nobody";
+var command = process.argv[2], songName = "The Sign", movieName = "Mr. Nobody", logString = command;
 function displayTweets() {
     client.get('statuses/user_timeline', { screen_name: "Eric05420935", count: 20 }, function (error, tweets, response) {
+        logString += "\n";
         for (let i = 0; i < tweets.length; i++) {
             console.log("Tweet:", tweets[i].text, " Created:", tweets[i].created_at);
+            logString += "Tweet: " + tweets[i].text + " Created:" + tweets[i].created_at + "\n";
         }
+        logString+="\n";
+        logData(logString);
     });
 }
 
@@ -18,6 +22,7 @@ function displaySpotify(song) {
         if (err) {
             return console.log('Error occurred: ' + err);
         }
+        logString += " " + song + "\nSearch Results:\n";
         console.log("Search Results:\n");
         for (let i = 0; i < data.tracks.items.length; i++) {
             const track = data.tracks.items[i];
@@ -27,10 +32,15 @@ function displaySpotify(song) {
             }
             artistString = artistString.slice(0, artistString.length - 2);
             console.log("Artists:", artistString);
+            logString += "Artists: " + artistString + "\n";
             console.log("Song Name:", track.name);
+            logString += "Song Name: " + track.name + "\n";
             console.log("Preview:", track.preview_url);
+            logString += "Preview: " + track.preview_url + "\n";
             console.log("Album:", track.album.name, "\n");
+            logString += "Album: " + track.album.name + "\n\n";
         }
+        logData(logString);
     });
 }
 
@@ -39,19 +49,37 @@ function displayMovie(movie) {
         title: movie,
         page: 1
     }).then(res => {
+        logString += " " + movie + "\n";
         console.log("Title:", res.Title);
+        logString += "Title: " + res.Title + "\n";
         console.log("Year:", res.Year);
+        logString += "Year: " + res.Year + "\n";
         console.log("IMDB Rating:", res.imdbRating);
+        logString += "IMDB Rating: " + res.imdbRating + "\n";
         for (let i = 0; i < res.Ratings.length; i++) {
             if (res.Ratings[i].Source == "Rotten Tomatoes") {
                 console.log("Rotten Tomatoes Rating:", res.Ratings[i].Value);
+                logString += "Rotten Tomatoes Rating:" + res.Ratings[i].Value + "\n";
             }
         }
         console.log("Country Produced:", res.Country);
+        logString += "Country Produced: " + res.Country + "\n";
         console.log("Language:", res.Language);
+        logString += "Language: " + res.Language + "\n";
         console.log("Plot:", res.Plot);
+        logString += "Plot: " + res.Plot + "\n";
         console.log("Actors:", res.Actors);
+        logString += "Actors: " + res.Actors + "\n\n";
+        logData(logString);
     }).catch(err => console.error(err));
+}
+
+function logData(data) {
+    fs.appendFile("log.txt", data + "\n", function (err) {
+        if (err) {
+            console.log(err);
+        }
+    });
 }
 
 switch (command) {
@@ -68,11 +96,15 @@ switch (command) {
         }
         var dataArr = data.split(",");
         switch (dataArr[0]) {
-            case "my-tweets": displayTweets(); break;
-            case "spotify-this-song": if (dataArr[1]) { songName = dataArr[1]; }
+            case "my-tweets": logString += " my-tweets";
+                displayTweets();
+                break;
+            case "spotify-this-song": logString += " spotify-this-song";
+                if (dataArr[1]) { songName = dataArr[1]; }
                 displaySpotify(songName);
                 break;
-            case "movie-this": if (dataArr[1]) { movieName = dataArr[1]; }
+            case "movie-this": logString += " movie-this";
+                if (dataArr[1]) { movieName = dataArr[1]; }
                 displayMovie(movieName); break;
             default: console.log("That is not a valid request.");
         }
